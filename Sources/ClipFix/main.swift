@@ -1,9 +1,6 @@
 import AppKit
 import Foundation
 
-// Cache PID file path for signal handler (must be a global for @convention(c) access)
-nonisolated(unsafe) var pidFilePath: String = ClipFixPaths.pidFile.path
-
 let args = Array(CommandLine.arguments.dropFirst())
 let command = args.first ?? "help"
 let subargs = Array(args.dropFirst())
@@ -40,10 +37,16 @@ let subargs = Array(args.dropFirst())
         }
     }
 
-    signal(SIGTERM) { _ in
-        unlink(pidFilePath)
-        _exit(0)
+    // Ignore default SIGTERM handling
+    signal(SIGTERM, SIG_IGN)
+
+    // Handle SIGTERM via dispatch source (safe to use Swift APIs)
+    let sigSource = DispatchSource.makeSignalSource(signal: SIGTERM, queue: .main)
+    sigSource.setEventHandler {
+        try? FileManager.default.removeItem(at: ClipFixPaths.pidFile)
+        exit(0)
     }
+    sigSource.resume()
 
     monitor.start()
     RunLoop.current.run()

@@ -3,37 +3,23 @@ import Foundation
 enum LaunchdManager {
     static func install() throws {
         let binaryPath = ProcessInfo.processInfo.arguments[0]
-        let plist = """
-        <?xml version="1.0" encoding="UTF-8"?>
-        <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" \
-        "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-        <plist version="1.0">
-        <dict>
-            <key>Label</key>
-            <string>com.clipfix.agent</string>
-            <key>ProgramArguments</key>
-            <array>
-                <string>\(binaryPath)</string>
-                <string>start</string>
-                <string>--foreground</string>
-            </array>
-            <key>RunAtLoad</key>
-            <true/>
-            <key>KeepAlive</key>
-            <false/>
-            <key>StandardOutPath</key>
-            <string>\(ClipFixPaths.baseDir.path)/stdout.log</string>
-            <key>StandardErrorPath</key>
-            <string>\(ClipFixPaths.baseDir.path)/stderr.log</string>
-        </dict>
-        </plist>
-        """
+        let baseDir = ClipFixPaths.baseDir.path
+
+        let plist: [String: Any] = [
+            "Label": "com.clipfix.agent",
+            "ProgramArguments": [binaryPath, "start", "--foreground"],
+            "RunAtLoad": true,
+            "KeepAlive": false,
+            "StandardOutPath": "\(baseDir)/stdout.log",
+            "StandardErrorPath": "\(baseDir)/stderr.log",
+        ]
 
         // Ensure LaunchAgents directory exists
         let launchAgentsDir = ClipFixPaths.launchdPlist.deletingLastPathComponent()
         try ClipFixPaths.ensureDirectory(launchAgentsDir)
 
-        try plist.write(to: ClipFixPaths.launchdPlist, atomically: true, encoding: .utf8)
+        let data = try PropertyListSerialization.data(fromPropertyList: plist, format: .xml, options: 0)
+        try data.write(to: ClipFixPaths.launchdPlist, options: .atomic)
     }
 
     static func uninstall() throws {
