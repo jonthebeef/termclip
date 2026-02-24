@@ -89,16 +89,28 @@ enum ClipFixCleaner {
 
     private static func containsMarkdown(_ lines: [String]) -> Bool {
         let stripped = lines.map { $0.trimmingCharacters(in: .whitespaces) }
-        return stripped.contains { line in
-            line.hasPrefix("# ") || line.hasPrefix("## ") || line.hasPrefix("### ") ||
-            line.hasPrefix("- ") || line.hasPrefix("* ") || line.hasPrefix("> ") ||
-            (line.hasPrefix("|") && line.contains("|") && line.hasSuffix("|"))
+        var indicators = 0
+        for line in stripped {
+            if line.hasPrefix("# ") || line.hasPrefix("## ") || line.hasPrefix("### ") ||
+               line.hasPrefix("#### ") || line.hasPrefix("##### ") || line.hasPrefix("###### ") {
+                indicators += 1
+            } else if line.hasPrefix("- ") || line.hasPrefix("* ") || line.hasPrefix("> ") {
+                indicators += 1
+            } else if line.hasPrefix("|") && line.contains("|") && line.hasSuffix("|") {
+                indicators += 1
+            } else if line.hasPrefix("```") {
+                indicators += 1
+            }
+            if indicators >= 2 { return true }
         }
+        return false
     }
 
     private static func containsBackslashContinuations(_ lines: [String]) -> Bool {
         let stripped = lines.map { $0.trimmingCharacters(in: .whitespaces) }
-        return stripped.contains { $0.hasSuffix("\\") }
+        return stripped.contains { line in
+            line.hasSuffix(" \\") || line == "\\"
+        }
     }
 
     private static func containsFencedCodeBlock(_ lines: [String]) -> Bool {
@@ -115,15 +127,16 @@ enum ClipFixCleaner {
         return (maxIndent - minIndent) >= 2
     }
 
+    private static let commandVerbs: Set<String> = [
+        "git", "cd", "ls", "npm", "yarn", "pnpm", "docker", "kubectl",
+        "ssh", "scp", "curl", "wget", "pip", "brew", "make", "cargo",
+        "go", "python", "python3", "node", "ruby", "swift", "rustc",
+        "cat", "echo", "mkdir", "rm", "cp", "mv", "chmod", "chown",
+        "grep", "find", "sed", "awk", "export", "source", "sudo",
+        "apt", "yum", "dnf", "pacman", "tar", "unzip", "zip",
+    ]
+
     private static func startsWithCommandVerb(_ line: String) -> Bool {
-        let commandVerbs = [
-            "git", "cd", "ls", "npm", "yarn", "pnpm", "docker", "kubectl",
-            "ssh", "scp", "curl", "wget", "pip", "brew", "make", "cargo",
-            "go", "python", "python3", "node", "ruby", "swift", "rustc",
-            "cat", "echo", "mkdir", "rm", "cp", "mv", "chmod", "chown",
-            "grep", "find", "sed", "awk", "export", "source", "sudo",
-            "apt", "yum", "dnf", "pacman", "tar", "unzip", "zip",
-        ]
         let firstWord = line.split(separator: " ", maxSplits: 1).first.map(String.init) ?? ""
         return commandVerbs.contains(firstWord)
     }
@@ -132,7 +145,7 @@ enum ClipFixCleaner {
         var result: [String] = []
         var current = ""
         for line in lines {
-            if current.hasSuffix("\\") {
+            if current.hasSuffix(" \\") || current == "\\" {
                 current = String(current.dropLast()).trimmingCharacters(in: .whitespaces)
                 current += " " + line.trimmingCharacters(in: .whitespaces)
             } else if !current.isEmpty {

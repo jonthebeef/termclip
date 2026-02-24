@@ -16,7 +16,7 @@ struct ClipFixConfig: Codable, Sendable {
             "com.github.wez.wezterm",
             "co.zeit.hyper",
             "dev.zed.Zed",
-            "com.todesktop.230313mzl4w4u92",
+            "com.todesktop.230313mzl4w4u92", // Cursor
         ]
     )
 

@@ -38,9 +38,9 @@ final class ClipboardMonitor {
 
         guard let text = pasteboard.string(forType: .string) else { return }
         guard isTerminalFrontmost() else { return }
-        guard !ClipFixCleaner.isAlreadyClean(text) else { return }
 
         let cleaned = ClipFixCleaner.clean(text)
+        guard cleaned != text else { return }
         let linesBefore = text.components(separatedBy: .newlines)
             .filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }.count
         let linesAfter = cleaned.components(separatedBy: .newlines)
