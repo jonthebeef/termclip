@@ -1,7 +1,7 @@
-import XCTest
+import Testing
 
-final class ClipFixTests: XCTestCase {
-    func testPlaceholder() {
-        XCTAssertTrue(true)
+struct ClipFixTests {
+    @Test func placeholder() {
+        #expect(Bool(true))
     }
 }
