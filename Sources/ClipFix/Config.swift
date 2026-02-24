@@ -17,6 +17,7 @@ struct ClipFixConfig: Codable, Sendable {
             "co.zeit.hyper",
             "dev.zed.Zed",
             "com.todesktop.230313mzl4w4u92", // Cursor
+            "com.mitchellh.ghostty", // Ghostty
         ]
     )
 
