@@ -2,17 +2,17 @@
 import PackageDescription
 
 let package = Package(
-    name: "ClipFix",
+    name: "Termclip",
     platforms: [.macOS(.v13)],
     targets: [
         .executableTarget(
-            name: "clipfix",
-            path: "Sources/ClipFix"
+            name: "termclip",
+            path: "Sources/Termclip"
         ),
         .testTarget(
-            name: "ClipFixTests",
-            dependencies: ["clipfix"],
-            path: "Tests/ClipFixTests"
+            name: "TermclipTests",
+            dependencies: ["termclip"],
+            path: "Tests/TermclipTests"
         ),
     ]
 )

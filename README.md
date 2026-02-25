@@ -1,8 +1,8 @@
-# ClipFix
+# Termclip
 
 Auto-clean clipboard text copied from terminal apps on macOS.
 
-When you copy text from terminal emulators, it often comes with unwanted line breaks, leading whitespace, and formatting artifacts — especially from tools that wrap output to the terminal width. ClipFix runs as a lightweight background daemon, watches your clipboard, and silently fixes the text so it pastes correctly.
+When you copy text from terminal emulators, it often comes with unwanted line breaks, leading whitespace, and formatting artifacts — especially from tools that wrap output to the terminal width. Termclip runs as a lightweight background daemon, watches your clipboard, and silently fixes the text so it pastes correctly.
 
 ## The Problem
 
@@ -14,7 +14,7 @@ file.txt ./local/destination/that/
 also/wraps/badly/
 ```
 
-ClipFix turns that into:
+Termclip turns that into:
 
 ```
 scp user@host:/some/really/long/path/to/a/file.txt ./local/destination/that/also/wraps/badly/
@@ -29,17 +29,17 @@ It handles single-line commands, multi-paragraph text, code blocks with indentat
 Requires Swift 6.0+ and macOS 13+.
 
 ```bash
-git clone https://github.com/jonthebeef/clipfix.git
-cd clipfix
+git clone https://github.com/jonthebeef/termclip.git
+cd termclip
 swift build -c release
-cp .build/release/clipfix ~/.local/bin/
+cp .build/release/termclip ~/.local/bin/
 ```
 
 If macOS blocks the binary:
 
 ```bash
-xattr -cr ~/.local/bin/clipfix
-codesign -fs - ~/.local/bin/clipfix
+xattr -cr ~/.local/bin/termclip
+codesign -fs - ~/.local/bin/termclip
 ```
 
 Make sure `~/.local/bin` is on your PATH:
@@ -51,7 +51,7 @@ export PATH="$HOME/.local/bin:$PATH"
 ## Usage
 
 ```
-clipfix <command>
+termclip <command>
 
 Commands:
   start                Start the background daemon
@@ -68,19 +68,19 @@ Commands:
 ### Quick start
 
 ```bash
-clipfix start
+termclip start
 ```
 
-That's it. ClipFix is now watching your clipboard. Copy text from any supported terminal app, paste it anywhere — the formatting artifacts are gone.
+That's it. Termclip is now watching your clipboard. Copy text from any supported terminal app, paste it anywhere — the formatting artifacts are gone.
 
 ### Check status
 
 ```bash
-clipfix status
+termclip status
 ```
 
 ```
-ClipFix status:
+Termclip status:
   Running:       yes
   PID:           42105
   Notifications: off
@@ -90,22 +90,22 @@ ClipFix status:
 ### Auto-start on login
 
 ```bash
-clipfix enable
+termclip enable
 ```
 
-This installs a launchd agent so ClipFix starts automatically when you log in. Remove it with `clipfix disable`.
+This installs a launchd agent so Termclip starts automatically when you log in. Remove it with `termclip disable`.
 
 ### See what it's doing
 
 ```bash
-clipfix log
+termclip log
 ```
 
 Shows the last 20 cleaning events with timestamps, source app, and before/after line counts.
 
 ## How It Works
 
-ClipFix polls the system clipboard every 300ms. When it detects a change from a terminal app, it runs the text through a heuristic cleaning engine:
+Termclip polls the system clipboard every 300ms. When it detects a change from a terminal app, it runs the text through a heuristic cleaning engine:
 
 1. **Single line** — just trim whitespace
 2. **Markdown** — preserve structure, strip common indentation
@@ -120,7 +120,7 @@ The engine is conservative: it preserves structure when it detects code or markd
 
 ## Supported Terminals
 
-ClipFix watches these apps by default:
+Termclip watches these apps by default:
 
 - Terminal.app
 - iTerm2
@@ -134,11 +134,11 @@ ClipFix watches these apps by default:
 - Cursor
 - Ghostty
 
-The terminal list is stored in `~/.clipfix/config.json` and can be edited to add or remove apps.
+The terminal list is stored in `~/.termclip/config.json` and can be edited to add or remove apps.
 
 ## Configuration
 
-Config lives at `~/.clipfix/config.json`:
+Config lives at `~/.termclip/config.json`:
 
 ```json
 {

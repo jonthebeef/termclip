@@ -8,7 +8,7 @@ enum DaemonManager {
     static func readPID(from url: URL) throws -> Int32 {
         let contents = try String(contentsOf: url, encoding: .utf8).trimmingCharacters(in: .whitespacesAndNewlines)
         guard let pid = Int32(contents) else {
-            throw ClipFixError.invalidPIDFile
+            throw TermclipError.invalidPIDFile
         }
         return pid
     }
@@ -31,7 +31,7 @@ enum DaemonManager {
     }
 }
 
-enum ClipFixError: Error, LocalizedError {
+enum TermclipError: Error, LocalizedError {
     case invalidPIDFile
     case alreadyRunning
     case notRunning
@@ -39,8 +39,8 @@ enum ClipFixError: Error, LocalizedError {
     var errorDescription: String? {
         switch self {
         case .invalidPIDFile: return "Invalid PID file"
-        case .alreadyRunning: return "ClipFix is already running"
-        case .notRunning: return "ClipFix is not running"
+        case .alreadyRunning: return "Termclip is already running"
+        case .notRunning: return "Termclip is not running"
         }
     }
 }

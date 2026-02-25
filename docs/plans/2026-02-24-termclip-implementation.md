@@ -1,4 +1,4 @@
-# ClipFix Implementation Plan
+# Termclip Implementation Plan
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
@@ -14,7 +14,7 @@
 
 **Files:**
 - Create: `Package.swift`
-- Create: `Sources/ClipFix/main.swift`
+- Create: `Sources/Termclip/main.swift`
 
 **Step 1: Create Package.swift**
 
@@ -23,17 +23,17 @@
 import PackageDescription
 
 let package = Package(
-    name: "ClipFix",
+    name: "Termclip",
     platforms: [.macOS(.v13)],
     targets: [
         .executableTarget(
-            name: "clipfix",
-            path: "Sources/ClipFix"
+            name: "termclip",
+            path: "Sources/Termclip"
         ),
         .testTarget(
-            name: "ClipFixTests",
-            dependencies: ["clipfix"],
-            path: "Tests/ClipFixTests"
+            name: "TermclipTests",
+            dependencies: ["termclip"],
+            path: "Tests/TermclipTests"
         ),
     ]
 )
@@ -44,18 +44,18 @@ let package = Package(
 ```swift
 import Foundation
 
-print("clipfix v0.1.0")
+print("termclip v0.1.0")
 ```
 
 **Step 3: Build and verify**
 
 Run: `cd /Users/thingy/Desktop/onestring && swift build 2>&1`
-Expected: Build succeeds, produces `.build/debug/clipfix`
+Expected: Build succeeds, produces `.build/debug/termclip`
 
 **Step 4: Run it**
 
-Run: `.build/debug/clipfix`
-Expected: Prints `clipfix v0.1.0`
+Run: `.build/debug/termclip`
+Expected: Prints `termclip v0.1.0`
 
 **Step 5: Commit**
 
@@ -69,17 +69,17 @@ git commit -m "feat: scaffold Swift package"
 ### Task 2: Config Module
 
 **Files:**
-- Create: `Sources/ClipFix/Config.swift`
-- Create: `Tests/ClipFixTests/ConfigTests.swift`
+- Create: `Sources/Termclip/Config.swift`
+- Create: `Tests/TermclipTests/ConfigTests.swift`
 
 **Step 1: Write the failing tests**
 
 ```swift
 import XCTest
-@testable import clipfix
+@testable import termclip
 
 final class ConfigTests: XCTestCase {
-    let testDir = FileManager.default.temporaryDirectory.appendingPathComponent("clipfix-test-\(UUID().uuidString)")
+    let testDir = FileManager.default.temporaryDirectory.appendingPathComponent("termclip-test-\(UUID().uuidString)")
 
     override func setUp() {
         try? FileManager.default.createDirectory(at: testDir, withIntermediateDirectories: true)
@@ -90,7 +90,7 @@ final class ConfigTests: XCTestCase {
     }
 
     func testDefaultConfig() {
-        let config = ClipFixConfig.defaultConfig
+        let config = TermclipConfig.defaultConfig
         XCTAssertFalse(config.notificationsEnabled)
         XCTAssertTrue(config.terminalBundleIDs.contains("com.apple.Terminal"))
         XCTAssertTrue(config.terminalBundleIDs.contains("com.googlecode.iterm2"))
@@ -98,17 +98,17 @@ final class ConfigTests: XCTestCase {
 
     func testSaveAndLoad() throws {
         let configPath = testDir.appendingPathComponent("config.json")
-        var config = ClipFixConfig.defaultConfig
+        var config = TermclipConfig.defaultConfig
         config.notificationsEnabled = true
         try config.save(to: configPath)
-        let loaded = try ClipFixConfig.load(from: configPath)
+        let loaded = try TermclipConfig.load(from: configPath)
         XCTAssertTrue(loaded.notificationsEnabled)
         XCTAssertEqual(loaded.terminalBundleIDs, config.terminalBundleIDs)
     }
 
     func testLoadMissingFileReturnsDefault() {
         let missing = testDir.appendingPathComponent("nonexistent.json")
-        let config = (try? ClipFixConfig.load(from: missing)) ?? .defaultConfig
+        let config = (try? TermclipConfig.load(from: missing)) ?? .defaultConfig
         XCTAssertFalse(config.notificationsEnabled)
     }
 }
@@ -117,18 +117,18 @@ final class ConfigTests: XCTestCase {
 **Step 2: Run tests to verify they fail**
 
 Run: `swift test 2>&1 | tail -20`
-Expected: FAIL — `ClipFixConfig` not defined
+Expected: FAIL — `TermclipConfig` not defined
 
 **Step 3: Implement Config**
 
 ```swift
 import Foundation
 
-struct ClipFixConfig: Codable {
+struct TermclipConfig: Codable {
     var notificationsEnabled: Bool
     var terminalBundleIDs: [String]
 
-    static let defaultConfig = ClipFixConfig(
+    static let defaultConfig = TermclipConfig(
         notificationsEnabled: false,
         terminalBundleIDs: [
             "com.apple.Terminal",
@@ -144,9 +144,9 @@ struct ClipFixConfig: Codable {
         ]
     )
 
-    static func load(from url: URL) throws -> ClipFixConfig {
+    static func load(from url: URL) throws -> TermclipConfig {
         let data = try Data(contentsOf: url)
-        return try JSONDecoder().decode(ClipFixConfig.self, from: data)
+        return try JSONDecoder().decode(TermclipConfig.self, from: data)
     }
 
     func save(to url: URL) throws {
@@ -166,7 +166,7 @@ Expected: All 3 tests PASS
 **Step 5: Commit**
 
 ```bash
-git add Sources/ClipFix/Config.swift Tests/
+git add Sources/Termclip/Config.swift Tests/
 git commit -m "feat: add config module with save/load and defaults"
 ```
 
@@ -175,30 +175,30 @@ git commit -m "feat: add config module with save/load and defaults"
 ### Task 3: Paths Module
 
 **Files:**
-- Create: `Sources/ClipFix/Paths.swift`
-- Create: `Tests/ClipFixTests/PathsTests.swift`
+- Create: `Sources/Termclip/Paths.swift`
+- Create: `Tests/TermclipTests/PathsTests.swift`
 
 **Step 1: Write the failing tests**
 
 ```swift
 import XCTest
-@testable import clipfix
+@testable import termclip
 
 final class PathsTests: XCTestCase {
     func testPathsPointToClipfixDir() {
         let home = FileManager.default.homeDirectoryForCurrentUser
-        let expected = home.appendingPathComponent(".clipfix")
-        XCTAssertEqual(ClipFixPaths.baseDir, expected)
-        XCTAssertEqual(ClipFixPaths.configFile, expected.appendingPathComponent("config.json"))
-        XCTAssertEqual(ClipFixPaths.pidFile, expected.appendingPathComponent("clipfix.pid"))
-        XCTAssertEqual(ClipFixPaths.logFile, expected.appendingPathComponent("clipfix.log"))
+        let expected = home.appendingPathComponent(".termclip")
+        XCTAssertEqual(TermclipPaths.baseDir, expected)
+        XCTAssertEqual(TermclipPaths.configFile, expected.appendingPathComponent("config.json"))
+        XCTAssertEqual(TermclipPaths.pidFile, expected.appendingPathComponent("termclip.pid"))
+        XCTAssertEqual(TermclipPaths.logFile, expected.appendingPathComponent("termclip.log"))
     }
 
     func testEnsureDirectoryCreatesDir() throws {
-        let testDir = FileManager.default.temporaryDirectory.appendingPathComponent("clipfix-paths-test-\(UUID().uuidString)")
+        let testDir = FileManager.default.temporaryDirectory.appendingPathComponent("termclip-paths-test-\(UUID().uuidString)")
         defer { try? FileManager.default.removeItem(at: testDir) }
         XCTAssertFalse(FileManager.default.fileExists(atPath: testDir.path))
-        try ClipFixPaths.ensureDirectory(testDir)
+        try TermclipPaths.ensureDirectory(testDir)
         XCTAssertTrue(FileManager.default.fileExists(atPath: testDir.path))
     }
 }
@@ -207,25 +207,25 @@ final class PathsTests: XCTestCase {
 **Step 2: Run tests to verify they fail**
 
 Run: `swift test 2>&1 | tail -20`
-Expected: FAIL — `ClipFixPaths` not defined
+Expected: FAIL — `TermclipPaths` not defined
 
 **Step 3: Implement Paths**
 
 ```swift
 import Foundation
 
-enum ClipFixPaths {
+enum TermclipPaths {
     static let baseDir: URL = {
-        FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".clipfix")
+        FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".termclip")
     }()
 
     static let configFile = baseDir.appendingPathComponent("config.json")
-    static let pidFile = baseDir.appendingPathComponent("clipfix.pid")
-    static let logFile = baseDir.appendingPathComponent("clipfix.log")
+    static let pidFile = baseDir.appendingPathComponent("termclip.pid")
+    static let logFile = baseDir.appendingPathComponent("termclip.log")
 
     static let launchdPlist: URL = {
         FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent("Library/LaunchAgents/com.clipfix.agent.plist")
+            .appendingPathComponent("Library/LaunchAgents/com.termclip.agent.plist")
     }()
 
     static func ensureDirectory(_ url: URL) throws {
@@ -242,7 +242,7 @@ Expected: All tests PASS
 **Step 5: Commit**
 
 ```bash
-git add Sources/ClipFix/Paths.swift Tests/ClipFixTests/PathsTests.swift
+git add Sources/Termclip/Paths.swift Tests/TermclipTests/PathsTests.swift
 git commit -m "feat: add paths module for file locations"
 ```
 
@@ -251,24 +251,24 @@ git commit -m "feat: add paths module for file locations"
 ### Task 4: Logger Module
 
 **Files:**
-- Create: `Sources/ClipFix/Logger.swift`
-- Create: `Tests/ClipFixTests/LoggerTests.swift`
+- Create: `Sources/Termclip/Logger.swift`
+- Create: `Tests/TermclipTests/LoggerTests.swift`
 
 **Step 1: Write the failing tests**
 
 ```swift
 import XCTest
-@testable import clipfix
+@testable import termclip
 
 final class LoggerTests: XCTestCase {
-    let testLogFile = FileManager.default.temporaryDirectory.appendingPathComponent("clipfix-log-test-\(UUID().uuidString).log")
+    let testLogFile = FileManager.default.temporaryDirectory.appendingPathComponent("termclip-log-test-\(UUID().uuidString).log")
 
     override func tearDown() {
         try? FileManager.default.removeItem(at: testLogFile)
     }
 
     func testLogWritesEntry() throws {
-        let logger = ClipFixLogger(file: testLogFile)
+        let logger = TermclipLogger(file: testLogFile)
         try logger.log(app: "iTerm2", original: "  scp foo\n  bar", cleaned: "scp foo bar", linesBefore: 2, linesAfter: 1)
         let contents = try String(contentsOf: testLogFile, encoding: .utf8)
         XCTAssertTrue(contents.contains("iTerm2"))
@@ -277,7 +277,7 @@ final class LoggerTests: XCTestCase {
     }
 
     func testLogCapsAt1000Entries() throws {
-        let logger = ClipFixLogger(file: testLogFile, maxEntries: 10)
+        let logger = TermclipLogger(file: testLogFile, maxEntries: 10)
         for i in 0..<15 {
             try logger.log(app: "Term", original: "line \(i)", cleaned: "line \(i)", linesBefore: 1, linesAfter: 1)
         }
@@ -289,7 +289,7 @@ final class LoggerTests: XCTestCase {
     }
 
     func testRecentReturnsLastN() throws {
-        let logger = ClipFixLogger(file: testLogFile)
+        let logger = TermclipLogger(file: testLogFile)
         for i in 0..<5 {
             try logger.log(app: "Term", original: "cmd \(i)", cleaned: "cmd \(i)", linesBefore: 1, linesAfter: 1)
         }
@@ -303,14 +303,14 @@ final class LoggerTests: XCTestCase {
 **Step 2: Run tests to verify they fail**
 
 Run: `swift test 2>&1 | tail -20`
-Expected: FAIL — `ClipFixLogger` not defined
+Expected: FAIL — `TermclipLogger` not defined
 
 **Step 3: Implement Logger**
 
 ```swift
 import Foundation
 
-final class ClipFixLogger {
+final class TermclipLogger {
     let file: URL
     let maxEntries: Int
 
@@ -360,7 +360,7 @@ Expected: All tests PASS
 **Step 5: Commit**
 
 ```bash
-git add Sources/ClipFix/Logger.swift Tests/ClipFixTests/LoggerTests.swift
+git add Sources/Termclip/Logger.swift Tests/TermclipTests/LoggerTests.swift
 git commit -m "feat: add rolling log with cap and recent retrieval"
 ```
 
@@ -368,17 +368,17 @@ git commit -m "feat: add rolling log with cap and recent retrieval"
 
 ### Task 5: Cleaning Heuristics Engine (Core)
 
-This is the heart of ClipFix. Heaviest test coverage.
+This is the heart of Termclip. Heaviest test coverage.
 
 **Files:**
-- Create: `Sources/ClipFix/Cleaner.swift`
-- Create: `Tests/ClipFixTests/CleanerTests.swift`
+- Create: `Sources/Termclip/Cleaner.swift`
+- Create: `Tests/TermclipTests/CleanerTests.swift`
 
 **Step 1: Write the failing tests**
 
 ```swift
 import XCTest
-@testable import clipfix
+@testable import termclip
 
 final class CleanerTests: XCTestCase {
 
@@ -386,13 +386,13 @@ final class CleanerTests: XCTestCase {
 
     func testSingleLineStripsWhitespace() {
         let input = "  scp foo bar  "
-        let result = ClipFixCleaner.clean(input)
+        let result = TermclipCleaner.clean(input)
         XCTAssertEqual(result, "scp foo bar")
     }
 
     func testAlreadyCleanSingleLine() {
         let input = "git push origin main"
-        let result = ClipFixCleaner.clean(input)
+        let result = TermclipCleaner.clean(input)
         XCTAssertEqual(result, input)
     }
 
@@ -403,7 +403,7 @@ final class CleanerTests: XCTestCase {
           scp -o IdentitiesOnly=yes -i ~/.ssh/id_ed25519 ~/.claude/settings.json
           jongrant@jons-mac-mini-2.local:~/.claude/
         """
-        let result = ClipFixCleaner.clean(input)
+        let result = TermclipCleaner.clean(input)
         XCTAssertEqual(result, "scp -o IdentitiesOnly=yes -i ~/.ssh/id_ed25519 ~/.claude/settings.json jongrant@jons-mac-mini-2.local:~/.claude/")
     }
 
@@ -411,10 +411,10 @@ final class CleanerTests: XCTestCase {
         let input = """
           curl -X POST https://api.example.com/v1/deploy
           -H "Authorization: Bearer token123"
-          -d '{"app": "clipfix"}'
+          -d '{"app": "termclip"}'
         """
-        let result = ClipFixCleaner.clean(input)
-        XCTAssertEqual(result, "curl -X POST https://api.example.com/v1/deploy -H \"Authorization: Bearer token123\" -d '{\"app\": \"clipfix\"}'")
+        let result = TermclipCleaner.clean(input)
+        XCTAssertEqual(result, "curl -X POST https://api.example.com/v1/deploy -H \"Authorization: Bearer token123\" -d '{\"app\": \"termclip\"}'")
     }
 
     // MARK: - Backslash continuations
@@ -426,7 +426,7 @@ final class CleanerTests: XCTestCase {
             -p 8080:80 \\
             nginx
         """
-        let result = ClipFixCleaner.clean(input)
+        let result = TermclipCleaner.clean(input)
         XCTAssertEqual(result, "docker run -v /host:/container -p 8080:80 nginx")
     }
 
@@ -440,7 +440,7 @@ final class CleanerTests: XCTestCase {
           - bullet one
           - bullet two
         """
-        let result = ClipFixCleaner.clean(input)
+        let result = TermclipCleaner.clean(input)
         XCTAssertTrue(result.contains("## Section Title"))
         XCTAssertTrue(result.contains("- bullet one"))
         XCTAssertTrue(result.contains("- bullet two"))
@@ -453,7 +453,7 @@ final class CleanerTests: XCTestCase {
           echo "world"
           ```
         """
-        let result = ClipFixCleaner.clean(input)
+        let result = TermclipCleaner.clean(input)
         XCTAssertTrue(result.contains("```bash"))
         XCTAssertTrue(result.contains("echo \"hello\""))
         XCTAssertTrue(result.contains("echo \"world\""))
@@ -468,7 +468,7 @@ final class CleanerTests: XCTestCase {
               if True:
                   return 1
         """
-        let result = ClipFixCleaner.clean(input)
+        let result = TermclipCleaner.clean(input)
         XCTAssertTrue(result.contains("def hello():"))
         XCTAssertTrue(result.contains("    print(\"world\")"))
         XCTAssertTrue(result.contains("        return 1"))
@@ -482,7 +482,7 @@ final class CleanerTests: XCTestCase {
           git commit -m "fix"
           git push
         """
-        let result = ClipFixCleaner.clean(input)
+        let result = TermclipCleaner.clean(input)
         XCTAssertEqual(result, "git add .\ngit commit -m \"fix\"\ngit push")
     }
 
@@ -496,7 +496,7 @@ final class CleanerTests: XCTestCase {
           Second paragraph also
           wrapping here.
         """
-        let result = ClipFixCleaner.clean(input)
+        let result = TermclipCleaner.clean(input)
         XCTAssertTrue(result.contains("First paragraph that wraps across two lines."))
         XCTAssertTrue(result.contains("Second paragraph also wrapping here."))
         XCTAssertTrue(result.contains("\n\n"))
@@ -505,19 +505,19 @@ final class CleanerTests: XCTestCase {
     // MARK: - Empty / whitespace only
 
     func testEmptyStringReturnsEmpty() {
-        XCTAssertEqual(ClipFixCleaner.clean(""), "")
+        XCTAssertEqual(TermclipCleaner.clean(""), "")
     }
 
     func testWhitespaceOnlyReturnsEmpty() {
-        XCTAssertEqual(ClipFixCleaner.clean("   \n  \n   "), "")
+        XCTAssertEqual(TermclipCleaner.clean("   \n  \n   "), "")
     }
 
     // MARK: - No change needed
 
     func testCleanTextUnchanged() {
         let input = "already clean"
-        XCTAssertEqual(ClipFixCleaner.clean(input), input)
-        XCTAssertTrue(ClipFixCleaner.isAlreadyClean(input))
+        XCTAssertEqual(TermclipCleaner.clean(input), input)
+        XCTAssertTrue(TermclipCleaner.isAlreadyClean(input))
     }
 }
 ```
@@ -525,14 +525,14 @@ final class CleanerTests: XCTestCase {
 **Step 2: Run tests to verify they fail**
 
 Run: `swift test 2>&1 | tail -20`
-Expected: FAIL — `ClipFixCleaner` not defined
+Expected: FAIL — `TermclipCleaner` not defined
 
 **Step 3: Implement Cleaner**
 
 ```swift
 import Foundation
 
-enum ClipFixCleaner {
+enum TermclipCleaner {
 
     static func clean(_ text: String) -> String {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -699,7 +699,7 @@ Expected: All 12+ tests PASS
 **Step 5: Commit**
 
 ```bash
-git add Sources/ClipFix/Cleaner.swift Tests/ClipFixTests/CleanerTests.swift
+git add Sources/Termclip/Cleaner.swift Tests/TermclipTests/CleanerTests.swift
 git commit -m "feat: add smart cleaning heuristics engine with tests"
 ```
 
@@ -708,7 +708,7 @@ git commit -m "feat: add smart cleaning heuristics engine with tests"
 ### Task 6: Clipboard Monitor (Daemon Core)
 
 **Files:**
-- Create: `Sources/ClipFix/ClipboardMonitor.swift`
+- Create: `Sources/Termclip/ClipboardMonitor.swift`
 
 Note: This module uses AppKit APIs (NSPasteboard, NSWorkspace) which are hard to unit test without a running app. We test it via integration later.
 
@@ -722,11 +722,11 @@ final class ClipboardMonitor {
     private let pasteboard = NSPasteboard.general
     private var lastChangeCount: Int
     private var timer: Timer?
-    private let config: ClipFixConfig
-    private let logger: ClipFixLogger
+    private let config: TermclipConfig
+    private let logger: TermclipLogger
     private let onClean: ((String) -> Void)?
 
-    init(config: ClipFixConfig, logger: ClipFixLogger, onClean: ((String) -> Void)? = nil) {
+    init(config: TermclipConfig, logger: TermclipLogger, onClean: ((String) -> Void)? = nil) {
         self.config = config
         self.logger = logger
         self.onClean = onClean
@@ -752,9 +752,9 @@ final class ClipboardMonitor {
 
         guard let text = pasteboard.string(forType: .string) else { return }
         guard isTerminalFrontmost() else { return }
-        guard !ClipFixCleaner.isAlreadyClean(text) else { return }
+        guard !TermclipCleaner.isAlreadyClean(text) else { return }
 
-        let cleaned = ClipFixCleaner.clean(text)
+        let cleaned = TermclipCleaner.clean(text)
         let linesBefore = text.components(separatedBy: .newlines).filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }.count
         let linesAfter = cleaned.components(separatedBy: .newlines).filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }.count
 
@@ -785,7 +785,7 @@ Expected: Build succeeds
 **Step 3: Commit**
 
 ```bash
-git add Sources/ClipFix/ClipboardMonitor.swift
+git add Sources/Termclip/ClipboardMonitor.swift
 git commit -m "feat: add clipboard monitor with terminal detection"
 ```
 
@@ -794,7 +794,7 @@ git commit -m "feat: add clipboard monitor with terminal detection"
 ### Task 7: Notification Support
 
 **Files:**
-- Create: `Sources/ClipFix/Notifier.swift`
+- Create: `Sources/Termclip/Notifier.swift`
 
 **Step 1: Implement Notifier**
 
@@ -802,14 +802,14 @@ git commit -m "feat: add clipboard monitor with terminal detection"
 import Foundation
 import UserNotifications
 
-final class ClipFixNotifier {
+final class TermclipNotifier {
     static func requestPermission() {
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert]) { _, _ in }
     }
 
     static func send(cleanedText: String) {
         let content = UNMutableNotificationContent()
-        content.title = "ClipFix"
+        content.title = "Termclip"
         content.body = String(cleanedText.prefix(60)) + (cleanedText.count > 60 ? "..." : "")
         let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil)
         UNUserNotificationCenter.current().add(request)
@@ -825,7 +825,7 @@ Expected: Build succeeds
 **Step 3: Commit**
 
 ```bash
-git add Sources/ClipFix/Notifier.swift
+git add Sources/Termclip/Notifier.swift
 git commit -m "feat: add macOS notification support"
 ```
 
@@ -834,17 +834,17 @@ git commit -m "feat: add macOS notification support"
 ### Task 8: Daemon Lifecycle (PID file, start/stop)
 
 **Files:**
-- Create: `Sources/ClipFix/Daemon.swift`
-- Create: `Tests/ClipFixTests/DaemonTests.swift`
+- Create: `Sources/Termclip/Daemon.swift`
+- Create: `Tests/TermclipTests/DaemonTests.swift`
 
 **Step 1: Write the failing tests**
 
 ```swift
 import XCTest
-@testable import clipfix
+@testable import termclip
 
 final class DaemonTests: XCTestCase {
-    let testDir = FileManager.default.temporaryDirectory.appendingPathComponent("clipfix-daemon-test-\(UUID().uuidString)")
+    let testDir = FileManager.default.temporaryDirectory.appendingPathComponent("termclip-daemon-test-\(UUID().uuidString)")
 
     override func setUp() {
         try? FileManager.default.createDirectory(at: testDir, withIntermediateDirectories: true)
@@ -893,7 +893,7 @@ enum DaemonManager {
     static func readPID(from url: URL) throws -> Int32 {
         let contents = try String(contentsOf: url, encoding: .utf8).trimmingCharacters(in: .whitespacesAndNewlines)
         guard let pid = Int32(contents) else {
-            throw ClipFixError.invalidPIDFile
+            throw TermclipError.invalidPIDFile
         }
         return pid
     }
@@ -916,7 +916,7 @@ enum DaemonManager {
     }
 }
 
-enum ClipFixError: Error, LocalizedError {
+enum TermclipError: Error, LocalizedError {
     case invalidPIDFile
     case alreadyRunning
     case notRunning
@@ -924,8 +924,8 @@ enum ClipFixError: Error, LocalizedError {
     var errorDescription: String? {
         switch self {
         case .invalidPIDFile: return "Invalid PID file"
-        case .alreadyRunning: return "ClipFix is already running"
-        case .notRunning: return "ClipFix is not running"
+        case .alreadyRunning: return "Termclip is already running"
+        case .notRunning: return "Termclip is not running"
         }
     }
 }
@@ -939,7 +939,7 @@ Expected: All tests PASS
 **Step 5: Commit**
 
 ```bash
-git add Sources/ClipFix/Daemon.swift Tests/ClipFixTests/DaemonTests.swift
+git add Sources/Termclip/Daemon.swift Tests/TermclipTests/DaemonTests.swift
 git commit -m "feat: add daemon lifecycle management with PID file"
 ```
 
@@ -948,7 +948,7 @@ git commit -m "feat: add daemon lifecycle management with PID file"
 ### Task 9: Launchd Integration
 
 **Files:**
-- Create: `Sources/ClipFix/Launchd.swift`
+- Create: `Sources/Termclip/Launchd.swift`
 
 **Step 1: Implement launchd plist generation**
 
@@ -964,7 +964,7 @@ enum LaunchdManager {
         <plist version="1.0">
         <dict>
             <key>Label</key>
-            <string>com.clipfix.agent</string>
+            <string>com.termclip.agent</string>
             <key>ProgramArguments</key>
             <array>
                 <string>\(binaryPath)</string>
@@ -976,29 +976,29 @@ enum LaunchdManager {
             <key>KeepAlive</key>
             <false/>
             <key>StandardOutPath</key>
-            <string>\(ClipFixPaths.baseDir.path)/stdout.log</string>
+            <string>\(TermclipPaths.baseDir.path)/stdout.log</string>
             <key>StandardErrorPath</key>
-            <string>\(ClipFixPaths.baseDir.path)/stderr.log</string>
+            <string>\(TermclipPaths.baseDir.path)/stderr.log</string>
         </dict>
         </plist>
         """
-        try plist.write(to: ClipFixPaths.launchdPlist, atomically: true, encoding: .utf8)
+        try plist.write(to: TermclipPaths.launchdPlist, atomically: true, encoding: .utf8)
     }
 
     static func uninstall() throws {
-        if FileManager.default.fileExists(atPath: ClipFixPaths.launchdPlist.path) {
+        if FileManager.default.fileExists(atPath: TermclipPaths.launchdPlist.path) {
             // Unload first
             let process = Process()
             process.executableURL = URL(fileURLWithPath: "/bin/launchctl")
-            process.arguments = ["unload", ClipFixPaths.launchdPlist.path]
+            process.arguments = ["unload", TermclipPaths.launchdPlist.path]
             try? process.run()
             process.waitUntilExit()
-            try FileManager.default.removeItem(at: ClipFixPaths.launchdPlist)
+            try FileManager.default.removeItem(at: TermclipPaths.launchdPlist)
         }
     }
 
     static var isInstalled: Bool {
-        FileManager.default.fileExists(atPath: ClipFixPaths.launchdPlist.path)
+        FileManager.default.fileExists(atPath: TermclipPaths.launchdPlist.path)
     }
 }
 ```
@@ -1011,7 +1011,7 @@ Expected: Build succeeds
 **Step 3: Commit**
 
 ```bash
-git add Sources/ClipFix/Launchd.swift
+git add Sources/Termclip/Launchd.swift
 git commit -m "feat: add launchd plist install/uninstall for auto-start"
 ```
 
@@ -1020,7 +1020,7 @@ git commit -m "feat: add launchd plist install/uninstall for auto-start"
 ### Task 10: CLI Command Router
 
 **Files:**
-- Modify: `Sources/ClipFix/main.swift`
+- Modify: `Sources/Termclip/main.swift`
 
 **Step 1: Replace main.swift with full CLI**
 
@@ -1029,7 +1029,7 @@ import AppKit
 import Foundation
 
 @main
-struct ClipFixCLI {
+struct TermclipCLI {
     static func main() {
         let args = CommandLine.arguments.dropFirst()
         let command = args.first ?? "help"
@@ -1052,7 +1052,7 @@ struct ClipFixCLI {
             case "disable":
                 try disableAutostart()
             case "version":
-                print("clipfix v0.1.0")
+                print("termclip v0.1.0")
             case "help", "--help", "-h":
                 printUsage()
             default:
@@ -1069,11 +1069,11 @@ struct ClipFixCLI {
     // MARK: - Commands
 
     static func startDaemon(foreground: Bool) throws {
-        try ClipFixPaths.ensureDirectory(ClipFixPaths.baseDir)
-        DaemonManager.removeStalePID(pidFile: ClipFixPaths.pidFile)
+        try TermclipPaths.ensureDirectory(TermclipPaths.baseDir)
+        DaemonManager.removeStalePID(pidFile: TermclipPaths.pidFile)
 
-        if DaemonManager.isRunning(pidFile: ClipFixPaths.pidFile) {
-            throw ClipFixError.alreadyRunning
+        if DaemonManager.isRunning(pidFile: TermclipPaths.pidFile) {
+            throw TermclipError.alreadyRunning
         }
 
         if !foreground {
@@ -1082,28 +1082,28 @@ struct ClipFixCLI {
             process.executableURL = URL(fileURLWithPath: ProcessInfo.processInfo.arguments[0])
             process.arguments = ["start", "--foreground"]
             try process.run()
-            print("ClipFix started (PID: \(process.processIdentifier))")
+            print("Termclip started (PID: \(process.processIdentifier))")
             return
         }
 
         // Foreground mode — run the daemon
-        let config = (try? ClipFixConfig.load(from: ClipFixPaths.configFile)) ?? .defaultConfig
-        let logger = ClipFixLogger(file: ClipFixPaths.logFile)
-        try DaemonManager.writePID(ProcessInfo.processInfo.processIdentifier, to: ClipFixPaths.pidFile)
+        let config = (try? TermclipConfig.load(from: TermclipPaths.configFile)) ?? .defaultConfig
+        let logger = TermclipLogger(file: TermclipPaths.logFile)
+        try DaemonManager.writePID(ProcessInfo.processInfo.processIdentifier, to: TermclipPaths.pidFile)
 
         if config.notificationsEnabled {
-            ClipFixNotifier.requestPermission()
+            TermclipNotifier.requestPermission()
         }
 
         let monitor = ClipboardMonitor(config: config, logger: logger) { cleaned in
             if config.notificationsEnabled {
-                ClipFixNotifier.send(cleanedText: cleaned)
+                TermclipNotifier.send(cleanedText: cleaned)
             }
         }
 
         // Handle SIGTERM gracefully
         signal(SIGTERM) { _ in
-            try? FileManager.default.removeItem(at: ClipFixPaths.pidFile)
+            try? FileManager.default.removeItem(at: TermclipPaths.pidFile)
             exit(0)
         }
 
@@ -1112,21 +1112,21 @@ struct ClipFixCLI {
     }
 
     static func stopDaemon() throws {
-        guard DaemonManager.isRunning(pidFile: ClipFixPaths.pidFile) else {
-            throw ClipFixError.notRunning
+        guard DaemonManager.isRunning(pidFile: TermclipPaths.pidFile) else {
+            throw TermclipError.notRunning
         }
-        try DaemonManager.stopRunning(pidFile: ClipFixPaths.pidFile)
-        print("ClipFix stopped")
+        try DaemonManager.stopRunning(pidFile: TermclipPaths.pidFile)
+        print("Termclip stopped")
     }
 
     static func showStatus() {
-        let running = DaemonManager.isRunning(pidFile: ClipFixPaths.pidFile)
-        let config = (try? ClipFixConfig.load(from: ClipFixPaths.configFile)) ?? .defaultConfig
+        let running = DaemonManager.isRunning(pidFile: TermclipPaths.pidFile)
+        let config = (try? TermclipConfig.load(from: TermclipPaths.configFile)) ?? .defaultConfig
         let autostart = LaunchdManager.isInstalled
 
-        print("ClipFix status:")
+        print("Termclip status:")
         print("  Running:       \(running ? "yes" : "no")")
-        if running, let pid = try? DaemonManager.readPID(from: ClipFixPaths.pidFile) {
+        if running, let pid = try? DaemonManager.readPID(from: TermclipPaths.pidFile) {
             print("  PID:           \(pid)")
         }
         print("  Notifications: \(config.notificationsEnabled ? "on" : "off")")
@@ -1135,21 +1135,21 @@ struct ClipFixCLI {
 
     static func setNotifications(_ value: String?) throws {
         guard let value = value, ["on", "off"].contains(value) else {
-            print("Usage: clipfix notifications <on|off>")
+            print("Usage: termclip notifications <on|off>")
             exit(1)
         }
-        try ClipFixPaths.ensureDirectory(ClipFixPaths.baseDir)
-        var config = (try? ClipFixConfig.load(from: ClipFixPaths.configFile)) ?? .defaultConfig
+        try TermclipPaths.ensureDirectory(TermclipPaths.baseDir)
+        var config = (try? TermclipConfig.load(from: TermclipPaths.configFile)) ?? .defaultConfig
         config.notificationsEnabled = (value == "on")
-        try config.save(to: ClipFixPaths.configFile)
+        try config.save(to: TermclipPaths.configFile)
         print("Notifications \(value)")
         if value == "on" {
-            ClipFixNotifier.requestPermission()
+            TermclipNotifier.requestPermission()
         }
     }
 
     static func showLog() throws {
-        let logger = ClipFixLogger(file: ClipFixPaths.logFile)
+        let logger = TermclipLogger(file: TermclipPaths.logFile)
         let entries = try logger.recent(count: 20)
         if entries.isEmpty {
             print("No cleaning activity yet.")
@@ -1159,9 +1159,9 @@ struct ClipFixCLI {
     }
 
     static func enableAutostart() throws {
-        try ClipFixPaths.ensureDirectory(ClipFixPaths.baseDir)
+        try TermclipPaths.ensureDirectory(TermclipPaths.baseDir)
         try LaunchdManager.install()
-        print("Auto-start enabled. ClipFix will start on login.")
+        print("Auto-start enabled. Termclip will start on login.")
     }
 
     static func disableAutostart() throws {
@@ -1171,12 +1171,12 @@ struct ClipFixCLI {
 
     static func printUsage() {
         print("""
-        ClipFix - Auto-clean clipboard text from terminal apps
+        Termclip - Auto-clean clipboard text from terminal apps
 
-        Usage: clipfix <command>
+        Usage: termclip <command>
 
         Commands:
-          start                Start the ClipFix daemon
+          start                Start the Termclip daemon
           stop                 Stop the running daemon
           status               Show current status
           notifications <on|off>  Toggle macOS notifications
@@ -1190,17 +1190,17 @@ struct ClipFixCLI {
 }
 ```
 
-Note: Remove the `@main` attribute and use top-level code in `main.swift` since this is an executable target. The struct approach requires `@main` which needs `static func main()` but for simplicity use top-level code — call `ClipFixCLI.main()` at the bottom of the file instead, or restructure as top-level code.
+Note: Remove the `@main` attribute and use top-level code in `main.swift` since this is an executable target. The struct approach requires `@main` which needs `static func main()` but for simplicity use top-level code — call `TermclipCLI.main()` at the bottom of the file instead, or restructure as top-level code.
 
 **Step 2: Build and test help output**
 
-Run: `swift build 2>&1 && .build/debug/clipfix help`
+Run: `swift build 2>&1 && .build/debug/termclip help`
 Expected: Build succeeds, prints usage
 
 **Step 3: Commit**
 
 ```bash
-git add Sources/ClipFix/main.swift
+git add Sources/Termclip/main.swift
 git commit -m "feat: add CLI command router with all subcommands"
 ```
 
@@ -1209,13 +1209,13 @@ git commit -m "feat: add CLI command router with all subcommands"
 ### Task 11: Integration Test — End to End
 
 **Files:**
-- Create: `Tests/ClipFixTests/IntegrationTests.swift`
+- Create: `Tests/TermclipTests/IntegrationTests.swift`
 
 **Step 1: Write integration tests for the cleaner with real-world examples**
 
 ```swift
 import XCTest
-@testable import clipfix
+@testable import termclip
 
 final class IntegrationTests: XCTestCase {
 
@@ -1225,7 +1225,7 @@ final class IntegrationTests: XCTestCase {
           scp -o IdentitiesOnly=yes -i ~/.ssh/id_ed25519 ~/.claude/settings.json ~/.claude/statusline-command.sh
           jongrant@jons-mac-mini-2.local:~/.claude/
         """
-        let result = ClipFixCleaner.clean(input)
+        let result = TermclipCleaner.clean(input)
         XCTAssertFalse(result.contains("\n"))
         XCTAssertTrue(result.hasPrefix("scp"))
         XCTAssertTrue(result.hasSuffix("~/.claude/"))
@@ -1239,7 +1239,7 @@ final class IntegrationTests: XCTestCase {
             -p 3000:3000 \\
             node:18 npm start
         """
-        let result = ClipFixCleaner.clean(input)
+        let result = TermclipCleaner.clean(input)
         XCTAssertFalse(result.contains("\\"))
         XCTAssertTrue(result.hasPrefix("docker"))
     }
@@ -1254,10 +1254,10 @@ final class IntegrationTests: XCTestCase {
 
           ```bash
           swift build -c release
-          cp .build/release/clipfix /usr/local/bin/
+          cp .build/release/termclip /usr/local/bin/
           ```
         """
-        let result = ClipFixCleaner.clean(input)
+        let result = TermclipCleaner.clean(input)
         XCTAssertTrue(result.contains("## Installation"))
         XCTAssertTrue(result.contains("1. Clone the repo"))
         XCTAssertTrue(result.contains("```bash"))
@@ -1269,7 +1269,7 @@ final class IntegrationTests: XCTestCase {
           git commit -m "initial commit"
           git push -u origin main
         """
-        let result = ClipFixCleaner.clean(input)
+        let result = TermclipCleaner.clean(input)
         let lines = result.components(separatedBy: "\n")
         XCTAssertEqual(lines.count, 3)
         XCTAssertTrue(lines[0].hasPrefix("git add"))
@@ -1284,7 +1284,7 @@ final class IntegrationTests: XCTestCase {
                   return n
               return fibonacci(n-1) + fibonacci(n-2)
         """
-        let result = ClipFixCleaner.clean(input)
+        let result = TermclipCleaner.clean(input)
         XCTAssertTrue(result.contains("def fibonacci(n):"))
         XCTAssertTrue(result.contains("    if n <= 1:"))
     }
@@ -1299,7 +1299,7 @@ Expected: ALL tests PASS
 **Step 3: Commit**
 
 ```bash
-git add Tests/ClipFixTests/IntegrationTests.swift
+git add Tests/TermclipTests/IntegrationTests.swift
 git commit -m "test: add integration tests with real-world Claude Code examples"
 ```
 
@@ -1314,18 +1314,18 @@ Expected: Build succeeds
 
 **Step 2: Test CLI commands**
 
-Run: `.build/release/clipfix version`
-Expected: `clipfix v0.1.0`
+Run: `.build/release/termclip version`
+Expected: `termclip v0.1.0`
 
-Run: `.build/release/clipfix help`
+Run: `.build/release/termclip help`
 Expected: Usage text
 
-Run: `.build/release/clipfix status`
+Run: `.build/release/termclip status`
 Expected: Shows status (not running)
 
 **Step 3: Test start/stop cycle**
 
-Run: `.build/release/clipfix start && sleep 1 && .build/release/clipfix status && .build/release/clipfix stop`
+Run: `.build/release/termclip start && sleep 1 && .build/release/termclip status && .build/release/termclip stop`
 Expected: Starts, shows running, stops
 
 **Step 4: Commit and push**
@@ -1342,16 +1342,16 @@ git push
 
 **Step 1: Copy to PATH**
 
-Run: `cp .build/release/clipfix /usr/local/bin/clipfix`
+Run: `cp .build/release/termclip /usr/local/bin/termclip`
 
-**Step 2: Remove old clipfix function from .zshrc**
+**Step 2: Remove old termclip function from .zshrc**
 
-Remove the `clipfix()` shell function from `~/.zshrc` since the binary now replaces it.
+Remove the `termclip()` shell function from `~/.zshrc` since the binary now replaces it.
 
 **Step 3: Verify installed binary**
 
-Run: `which clipfix && clipfix version`
-Expected: `/usr/local/bin/clipfix` and `clipfix v0.1.0`
+Run: `which termclip && termclip version`
+Expected: `/usr/local/bin/termclip` and `termclip v0.1.0`
 
 **Step 4: Commit .zshrc change**
 

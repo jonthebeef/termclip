@@ -6,11 +6,11 @@ let command = args.first ?? "help"
 let subargs = Array(args.dropFirst())
 
 @MainActor func startDaemon(foreground: Bool) throws {
-    try ClipFixPaths.ensureDirectory(ClipFixPaths.baseDir)
-    DaemonManager.removeStalePID(pidFile: ClipFixPaths.pidFile)
+    try TermclipPaths.ensureDirectory(TermclipPaths.baseDir)
+    DaemonManager.removeStalePID(pidFile: TermclipPaths.pidFile)
 
-    if DaemonManager.isRunning(pidFile: ClipFixPaths.pidFile) {
-        throw ClipFixError.alreadyRunning
+    if DaemonManager.isRunning(pidFile: TermclipPaths.pidFile) {
+        throw TermclipError.alreadyRunning
     }
 
     if !foreground {
@@ -18,22 +18,22 @@ let subargs = Array(args.dropFirst())
         process.executableURL = URL(fileURLWithPath: ProcessInfo.processInfo.arguments[0])
         process.arguments = ["start", "--foreground"]
         try process.run()
-        print("ClipFix started (PID: \(process.processIdentifier))")
+        print("Termclip started (PID: \(process.processIdentifier))")
         return
     }
 
     // Foreground mode — run the daemon
-    let config = (try? ClipFixConfig.load(from: ClipFixPaths.configFile)) ?? .defaultConfig
-    let logger = ClipFixLogger(file: ClipFixPaths.logFile)
-    try DaemonManager.writePID(ProcessInfo.processInfo.processIdentifier, to: ClipFixPaths.pidFile)
+    let config = (try? TermclipConfig.load(from: TermclipPaths.configFile)) ?? .defaultConfig
+    let logger = TermclipLogger(file: TermclipPaths.logFile)
+    try DaemonManager.writePID(ProcessInfo.processInfo.processIdentifier, to: TermclipPaths.pidFile)
 
     if config.notificationsEnabled {
-        ClipFixNotifier.requestPermission()
+        TermclipNotifier.requestPermission()
     }
 
     let monitor = ClipboardMonitor(config: config, logger: logger) { cleaned in
         if config.notificationsEnabled {
-            ClipFixNotifier.send(cleanedText: cleaned)
+            TermclipNotifier.send(cleanedText: cleaned)
         }
     }
 
@@ -43,7 +43,7 @@ let subargs = Array(args.dropFirst())
     // Handle SIGTERM via dispatch source (safe to use Swift APIs)
     let sigSource = DispatchSource.makeSignalSource(signal: SIGTERM, queue: .main)
     sigSource.setEventHandler {
-        try? FileManager.default.removeItem(at: ClipFixPaths.pidFile)
+        try? FileManager.default.removeItem(at: TermclipPaths.pidFile)
         exit(0)
     }
     sigSource.resume()
@@ -53,21 +53,21 @@ let subargs = Array(args.dropFirst())
 }
 
 func stopDaemon() throws {
-    guard DaemonManager.isRunning(pidFile: ClipFixPaths.pidFile) else {
-        throw ClipFixError.notRunning
+    guard DaemonManager.isRunning(pidFile: TermclipPaths.pidFile) else {
+        throw TermclipError.notRunning
     }
-    try DaemonManager.stopRunning(pidFile: ClipFixPaths.pidFile)
-    print("ClipFix stopped")
+    try DaemonManager.stopRunning(pidFile: TermclipPaths.pidFile)
+    print("Termclip stopped")
 }
 
 func showStatus() {
-    let running = DaemonManager.isRunning(pidFile: ClipFixPaths.pidFile)
-    let config = (try? ClipFixConfig.load(from: ClipFixPaths.configFile)) ?? .defaultConfig
+    let running = DaemonManager.isRunning(pidFile: TermclipPaths.pidFile)
+    let config = (try? TermclipConfig.load(from: TermclipPaths.configFile)) ?? .defaultConfig
     let autostart = LaunchdManager.isInstalled
 
-    print("ClipFix status:")
+    print("Termclip status:")
     print("  Running:       \(running ? "yes" : "no")")
-    if running, let pid = try? DaemonManager.readPID(from: ClipFixPaths.pidFile) {
+    if running, let pid = try? DaemonManager.readPID(from: TermclipPaths.pidFile) {
         print("  PID:           \(pid)")
     }
     print("  Notifications: \(config.notificationsEnabled ? "on" : "off")")
@@ -76,18 +76,18 @@ func showStatus() {
 
 func setNotifications(_ value: String?) throws {
     guard let value = value, ["on", "off"].contains(value) else {
-        print("Usage: clipfix notifications <on|off>")
+        print("Usage: termclip notifications <on|off>")
         exit(1)
     }
-    try ClipFixPaths.ensureDirectory(ClipFixPaths.baseDir)
-    var config = (try? ClipFixConfig.load(from: ClipFixPaths.configFile)) ?? .defaultConfig
+    try TermclipPaths.ensureDirectory(TermclipPaths.baseDir)
+    var config = (try? TermclipConfig.load(from: TermclipPaths.configFile)) ?? .defaultConfig
     config.notificationsEnabled = (value == "on")
-    try config.save(to: ClipFixPaths.configFile)
+    try config.save(to: TermclipPaths.configFile)
     print("Notifications \(value)")
 }
 
 func showLog() throws {
-    let logger = ClipFixLogger(file: ClipFixPaths.logFile)
+    let logger = TermclipLogger(file: TermclipPaths.logFile)
     let entries = try logger.recent(count: 20)
     if entries.isEmpty {
         print("No cleaning activity yet.")
@@ -97,9 +97,9 @@ func showLog() throws {
 }
 
 func enableAutostart() throws {
-    try ClipFixPaths.ensureDirectory(ClipFixPaths.baseDir)
+    try TermclipPaths.ensureDirectory(TermclipPaths.baseDir)
     try LaunchdManager.install()
-    print("Auto-start enabled. ClipFix will start on login.")
+    print("Auto-start enabled. Termclip will start on login.")
 }
 
 func disableAutostart() throws {
@@ -109,12 +109,12 @@ func disableAutostart() throws {
 
 func printUsage() {
     print("""
-    ClipFix - Auto-clean clipboard text from terminal apps
+    Termclip - Auto-clean clipboard text from terminal apps
 
-    Usage: clipfix <command>
+    Usage: termclip <command>
 
     Commands:
-      start                Start the ClipFix daemon
+      start                Start the Termclip daemon
       stop                 Stop the running daemon
       status               Show current status
       notifications <on|off>  Toggle macOS notifications
@@ -144,7 +144,7 @@ do {
     case "disable":
         try disableAutostart()
     case "version":
-        print("clipfix v0.1.0")
+        print("termclip v0.1.0")
     case "help", "--help", "-h":
         printUsage()
     default:

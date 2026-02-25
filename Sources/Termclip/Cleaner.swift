@@ -1,6 +1,6 @@
 import Foundation
 
-enum ClipFixCleaner {
+enum TermclipCleaner {
 
     static func clean(_ text: String) -> String {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)

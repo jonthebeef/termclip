@@ -1,10 +1,10 @@
 import Testing
 import Foundation
-@testable import clipfix
+@testable import termclip
 
 struct DaemonTests {
     @Test func writeAndReadPID() throws {
-        let testDir = FileManager.default.temporaryDirectory.appendingPathComponent("clipfix-daemon-test-\(UUID().uuidString)")
+        let testDir = FileManager.default.temporaryDirectory.appendingPathComponent("termclip-daemon-test-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: testDir, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: testDir) }
 
@@ -15,7 +15,7 @@ struct DaemonTests {
     }
 
     @Test func isRunningReturnsFalseForBogus() throws {
-        let testDir = FileManager.default.temporaryDirectory.appendingPathComponent("clipfix-daemon-test-\(UUID().uuidString)")
+        let testDir = FileManager.default.temporaryDirectory.appendingPathComponent("termclip-daemon-test-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: testDir, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: testDir) }
 
@@ -25,7 +25,7 @@ struct DaemonTests {
     }
 
     @Test func isRunningReturnsFalseForMissingFile() {
-        let testDir = FileManager.default.temporaryDirectory.appendingPathComponent("clipfix-daemon-test-\(UUID().uuidString)")
+        let testDir = FileManager.default.temporaryDirectory.appendingPathComponent("termclip-daemon-test-\(UUID().uuidString)")
         let pidFile = testDir.appendingPathComponent("nonexistent.pid")
         #expect(!DaemonManager.isRunning(pidFile: pidFile))
     }

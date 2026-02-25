@@ -1,6 +1,6 @@
 import Foundation
 
-final class ClipFixLogger: Sendable {
+final class TermclipLogger: Sendable {
     let file: URL
     let maxEntries: Int
 

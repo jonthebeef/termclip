@@ -1,17 +1,17 @@
 import Foundation
 
-enum ClipFixPaths {
+enum TermclipPaths {
     static let baseDir: URL = {
-        FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".clipfix")
+        FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".termclip")
     }()
 
     static let configFile = baseDir.appendingPathComponent("config.json")
-    static let pidFile = baseDir.appendingPathComponent("clipfix.pid")
-    static let logFile = baseDir.appendingPathComponent("clipfix.log")
+    static let pidFile = baseDir.appendingPathComponent("termclip.pid")
+    static let logFile = baseDir.appendingPathComponent("termclip.log")
 
     static let launchdPlist: URL = {
         FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent("Library/LaunchAgents/com.clipfix.agent.plist")
+            .appendingPathComponent("Library/LaunchAgents/com.termclip.agent.plist")
     }()
 
     static func ensureDirectory(_ url: URL) throws {

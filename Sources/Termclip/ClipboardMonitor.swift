@@ -6,8 +6,8 @@ final class ClipboardMonitor {
     private let pasteboard = NSPasteboard.general
     private var lastChangeCount: Int
     private var timer: Timer?
-    private let config: ClipFixConfig
-    private let logger: ClipFixLogger
+    private let config: TermclipConfig
+    private let logger: TermclipLogger
     private let onClean: (@MainActor (String) -> Void)?
 
     // Track the last terminal app that was frontmost, so we can still
@@ -17,7 +17,7 @@ final class ClipboardMonitor {
     private var lastTerminalName: String?
     private var observer: NSObjectProtocol?
 
-    init(config: ClipFixConfig, logger: ClipFixLogger, onClean: (@MainActor (String) -> Void)? = nil) {
+    init(config: TermclipConfig, logger: TermclipLogger, onClean: (@MainActor (String) -> Void)? = nil) {
         self.config = config
         self.logger = logger
         self.onClean = onClean
@@ -100,7 +100,7 @@ final class ClipboardMonitor {
             lastTerminalName = nil
         }
 
-        let cleaned = ClipFixCleaner.clean(text)
+        let cleaned = TermclipCleaner.clean(text)
         guard cleaned != text else { return }
         let linesBefore = text.components(separatedBy: .newlines)
             .filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }.count

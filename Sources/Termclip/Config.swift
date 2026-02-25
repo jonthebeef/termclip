@@ -1,10 +1,10 @@
 import Foundation
 
-struct ClipFixConfig: Codable, Sendable {
+struct TermclipConfig: Codable, Sendable {
     var notificationsEnabled: Bool
     var terminalBundleIDs: [String]
 
-    static let defaultConfig = ClipFixConfig(
+    static let defaultConfig = TermclipConfig(
         notificationsEnabled: false,
         terminalBundleIDs: [
             "com.apple.Terminal",
@@ -21,9 +21,9 @@ struct ClipFixConfig: Codable, Sendable {
         ]
     )
 
-    static func load(from url: URL) throws -> ClipFixConfig {
+    static func load(from url: URL) throws -> TermclipConfig {
         let data = try Data(contentsOf: url)
-        return try JSONDecoder().decode(ClipFixConfig.self, from: data)
+        return try JSONDecoder().decode(TermclipConfig.self, from: data)
     }
 
     func save(to url: URL) throws {

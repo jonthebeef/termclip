@@ -1,13 +1,13 @@
 import Testing
 import Foundation
-@testable import clipfix
+@testable import termclip
 
 struct LoggerTests {
     @Test func logWritesEntry() throws {
-        let testLogFile = FileManager.default.temporaryDirectory.appendingPathComponent("clipfix-log-test-\(UUID().uuidString).log")
+        let testLogFile = FileManager.default.temporaryDirectory.appendingPathComponent("termclip-log-test-\(UUID().uuidString).log")
         defer { try? FileManager.default.removeItem(at: testLogFile) }
 
-        let logger = ClipFixLogger(file: testLogFile)
+        let logger = TermclipLogger(file: testLogFile)
         try logger.log(app: "iTerm2", original: "  scp foo\n  bar", cleaned: "scp foo bar", linesBefore: 2, linesAfter: 1)
         let contents = try String(contentsOf: testLogFile, encoding: .utf8)
         #expect(contents.contains("iTerm2"))
@@ -16,10 +16,10 @@ struct LoggerTests {
     }
 
     @Test func logCapsAtMaxEntries() throws {
-        let testLogFile = FileManager.default.temporaryDirectory.appendingPathComponent("clipfix-log-test-\(UUID().uuidString).log")
+        let testLogFile = FileManager.default.temporaryDirectory.appendingPathComponent("termclip-log-test-\(UUID().uuidString).log")
         defer { try? FileManager.default.removeItem(at: testLogFile) }
 
-        let logger = ClipFixLogger(file: testLogFile, maxEntries: 10)
+        let logger = TermclipLogger(file: testLogFile, maxEntries: 10)
         for i in 0..<15 {
             try logger.log(app: "Term", original: "line \(i)", cleaned: "line \(i)", linesBefore: 1, linesAfter: 1)
         }
@@ -31,10 +31,10 @@ struct LoggerTests {
     }
 
     @Test func recentReturnsLastN() throws {
-        let testLogFile = FileManager.default.temporaryDirectory.appendingPathComponent("clipfix-log-test-\(UUID().uuidString).log")
+        let testLogFile = FileManager.default.temporaryDirectory.appendingPathComponent("termclip-log-test-\(UUID().uuidString).log")
         defer { try? FileManager.default.removeItem(at: testLogFile) }
 
-        let logger = ClipFixLogger(file: testLogFile)
+        let logger = TermclipLogger(file: testLogFile)
         for i in 0..<5 {
             try logger.log(app: "Term", original: "cmd \(i)", cleaned: "cmd \(i)", linesBefore: 1, linesAfter: 1)
         }

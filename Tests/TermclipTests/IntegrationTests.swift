@@ -1,6 +1,6 @@
 import Testing
 import Foundation
-@testable import clipfix
+@testable import termclip
 
 struct IntegrationTests {
 
@@ -10,7 +10,7 @@ struct IntegrationTests {
           scp -o IdentitiesOnly=yes -i ~/.ssh/id_ed25519 ~/.claude/settings.json ~/.claude/statusline-command.sh
           jongrant@jons-mac-mini-2.local:~/.claude/
         """
-        let result = ClipFixCleaner.clean(input)
+        let result = TermclipCleaner.clean(input)
         #expect(!result.contains("\n"))
         #expect(result.hasPrefix("scp"))
         #expect(result.hasSuffix("~/.claude/"))
@@ -24,7 +24,7 @@ struct IntegrationTests {
             -p 3000:3000 \\
             node:18 npm start
         """
-        let result = ClipFixCleaner.clean(input)
+        let result = TermclipCleaner.clean(input)
         #expect(!result.contains("\\"))
         #expect(result.hasPrefix("docker"))
     }
@@ -39,10 +39,10 @@ struct IntegrationTests {
 
           ```bash
           swift build -c release
-          cp .build/release/clipfix /usr/local/bin/
+          cp .build/release/termclip /usr/local/bin/
           ```
         """
-        let result = ClipFixCleaner.clean(input)
+        let result = TermclipCleaner.clean(input)
         #expect(result.contains("## Installation"))
         #expect(result.contains("1. Clone the repo"))
         #expect(result.contains("```bash"))
@@ -54,7 +54,7 @@ struct IntegrationTests {
           git commit -m "initial commit"
           git push -u origin main
         """
-        let result = ClipFixCleaner.clean(input)
+        let result = TermclipCleaner.clean(input)
         let lines = result.components(separatedBy: "\n")
         #expect(lines.count == 3)
         #expect(lines[0].hasPrefix("git add"))
@@ -69,7 +69,7 @@ struct IntegrationTests {
                   return n
               return fibonacci(n-1) + fibonacci(n-2)
         """
-        let result = ClipFixCleaner.clean(input)
+        let result = TermclipCleaner.clean(input)
         #expect(result.contains("def fibonacci(n):"))
         #expect(result.contains("    if n <= 1:"))
     }

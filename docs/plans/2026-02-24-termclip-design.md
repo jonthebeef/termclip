@@ -1,4 +1,4 @@
-# ClipFix Design Document
+# Termclip Design Document
 
 ## Problem
 
@@ -8,43 +8,43 @@ No existing macOS app solves this. Current clipboard tools (CleanBoard, PastePla
 
 ## Solution
 
-ClipFix is a lightweight, invisible macOS daemon that monitors the clipboard and automatically cleans text copied from terminal apps. It uses heuristics to intelligently decide what to clean and what to preserve.
+Termclip is a lightweight, invisible macOS daemon that monitors the clipboard and automatically cleans text copied from terminal apps. It uses heuristics to intelligently decide what to clean and what to preserve.
 
 ## Architecture
 
 ### Single Binary, Two Modes
 
-One compiled Swift binary (`clipfix`) operates as both the daemon and the CLI.
+One compiled Swift binary (`termclip`) operates as both the daemon and the CLI.
 
-- **Daemon mode**: `clipfix start` forks into the background, monitors pasteboard via `NSPasteboard.changeCount`, detects frontmost app via `NSWorkspace`, applies cleaning heuristics, writes cleaned text back to the pasteboard.
+- **Daemon mode**: `termclip start` forks into the background, monitors pasteboard via `NSPasteboard.changeCount`, detects frontmost app via `NSWorkspace`, applies cleaning heuristics, writes cleaned text back to the pasteboard.
 - **CLI mode**: All other subcommands (`stop`, `status`, `notifications`, `log`, `enable`, `disable`) communicate with the running daemon via PID file and signals, or read/write shared config.
 
 ### File Locations
 
 ```
-~/.clipfix/
-  clipfix.pid        # PID of running daemon
+~/.termclip/
+  termclip.pid        # PID of running daemon
   config.json        # User preferences
-  clipfix.log        # Recent cleaning activity (rolling, capped)
+  termclip.log        # Recent cleaning activity (rolling, capped)
 ```
 
 ### Launchd Integration
 
-- `clipfix enable` installs a launchd plist at `~/Library/LaunchAgents/com.clipfix.agent.plist` for auto-start on login
-- `clipfix disable` removes it
+- `termclip enable` installs a launchd plist at `~/Library/LaunchAgents/com.termclip.agent.plist` for auto-start on login
+- `termclip disable` removes it
 - Not installed by default — user opts in
 
 ## CLI Interface
 
 ```
-clipfix start                # Start daemon in background
-clipfix stop                 # Stop running daemon
-clipfix status               # Show running state, notification setting
-clipfix notifications on     # Enable macOS notifications on clean
-clipfix notifications off    # Disable notifications
-clipfix log                  # Show recent cleaning activity
-clipfix enable               # Install launchd agent for auto-start on login
-clipfix disable              # Remove launchd agent
+termclip start                # Start daemon in background
+termclip stop                 # Stop running daemon
+termclip status               # Show running state, notification setting
+termclip notifications on     # Enable macOS notifications on clean
+termclip notifications off    # Disable notifications
+termclip log                  # Show recent cleaning activity
+termclip enable               # Install launchd agent for auto-start on login
+termclip disable              # Remove launchd agent
 ```
 
 ## Terminal Detection
@@ -66,7 +66,7 @@ This list is stored in config.json so users can add custom terminal apps.
 
 ## Smart Cleaning Heuristics
 
-The core intelligence of ClipFix. Applied only to plain text copied from terminal apps.
+The core intelligence of Termclip. Applied only to plain text copied from terminal apps.
 
 ### Decision Flow
 
@@ -103,27 +103,27 @@ The core intelligence of ClipFix. Applied only to plain text copied from termina
 
 ## Notifications
 
-When enabled, ClipFix sends a macOS `UserNotification` after cleaning:
+When enabled, Termclip sends a macOS `UserNotification` after cleaning:
 
-- Title: "ClipFix"
+- Title: "Termclip"
 - Body: Preview of cleaned text (truncated to ~60 chars)
 - Disappears automatically (no action required)
 
-Notifications are off by default. Toggle via `clipfix notifications on/off`.
+Notifications are off by default. Toggle via `termclip notifications on/off`.
 
 ## Logging
 
-Rolling log at `~/.clipfix/clipfix.log`, capped at 1000 entries. Each entry:
+Rolling log at `~/.termclip/termclip.log`, capped at 1000 entries. Each entry:
 
 ```
 [2026-02-24 14:32:01] Cleaned from iTerm2: "scp -o IdentitiesOnly=ye..." (3 lines → 1)
 ```
 
-Viewable via `clipfix log` (shows last 20 entries by default).
+Viewable via `termclip log` (shows last 20 entries by default).
 
 ## Distribution
 
-- **Homebrew**: Primary distribution channel (`brew install clipfix`)
+- **Homebrew**: Primary distribution channel (`brew install termclip`)
 - **Direct download**: Compiled universal binary (arm64 + x86_64) from GitHub releases
 - **Source**: `swift build` for developers
 

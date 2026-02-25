@@ -1,7 +1,7 @@
 import Foundation
 import UserNotifications
 
-final class ClipFixNotifier: Sendable {
+final class TermclipNotifier: Sendable {
     /// Returns true if UNUserNotificationCenter is safe to use (requires a bundled app context).
     private static var isAvailable: Bool {
         return Bundle.main.bundleIdentifier != nil
@@ -15,7 +15,7 @@ final class ClipFixNotifier: Sendable {
     static func send(cleanedText: String) {
         guard isAvailable else { return }
         let content = UNMutableNotificationContent()
-        content.title = "ClipFix"
+        content.title = "Termclip"
         content.body = String(cleanedText.prefix(60)) + (cleanedText.count > 60 ? "..." : "")
         let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil)
         UNUserNotificationCenter.current().add(request)
